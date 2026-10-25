@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Predictive Maintenance System</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="header">
+            <h1>🔧 Predictive Maintenance System</h1>
+
+            <p>
+                Explainable AI for Machine Failure Prediction
+            </p>
+        </div>
+
+
+        <!-- INPUT CARD -->
+        <div class="card">
+
+            <h2>Machine Information</h2>
+
+            <p class="description">
+                Enter the current operating conditions of the machine
+                to predict failure risk and receive a maintenance recommendation.
+            </p>
+
+
+            <form method="POST">
+
+                <!-- Machine ID -->
+                <div class="form-group">
+
+                    <label for="machine_id">
+                        Machine ID
+                    </label>
+
+                    <input
+                        type="text"
+                        id="machine_id"
+                        name="machine_id"
+                        placeholder="Example: M-001"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Machine Type -->
+                <div class="form-group">
+
+                    <label for="type">
+                        Machine Type
+                    </label>
+
+                    <select id="type" name="type" required>
+
+                        <option value="0">
+                            L - Low
+                        </option>
+
+                        <option value="1">
+                            M - Medium
+                        </option>
+
+                        <option value="2">
+                            H - High
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- Air Temperature -->
+                <div class="form-group">
+
+                    <label for="air_temperature">
+                        Air Temperature (K)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="air_temperature"
+                        name="air_temperature"
+                        step="0.1"
+                        placeholder="Example: 301.7"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Process Temperature -->
+                <div class="form-group">
+
+                    <label for="process_temperature">
+                        Process Temperature (K)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="process_temperature"
+                        name="process_temperature"
+                        step="0.1"
+                        placeholder="Example: 309.5"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Rotational Speed -->
+                <div class="form-group">
+
+                    <label for="rotational_speed">
+                        Rotational Speed (rpm)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="rotational_speed"
+                        name="rotational_speed"
+                        step="1"
+                        placeholder="Example: 1298"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Torque -->
+                <div class="form-group">
+
+                    <label for="torque">
+                        Torque (Nm)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="torque"
+                        name="torque"
+                        step="0.1"
+                        placeholder="Example: 65.5"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- Tool Wear -->
+                <div class="form-group">
+
+                    <label for="tool_wear">
+                        Tool Wear (min)
+                    </label>
+
+                    <input
+                        type="number"
+                        id="tool_wear"
+                        name="tool_wear"
+                        step="1"
+                        placeholder="Example: 229"
+                        required
+                    >
+
+                </div>
+
+
+                <!-- SUBMIT BUTTON -->
+                <button type="submit">
+                    🔍 Predict Machine Failure
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- ===================================== -->
+        <!-- RESULTS -->
+        <!-- ===================================== -->
+
+        {% if result %}
+
+        <div class="result-card">
+
+            <h2>Prediction Result</h2>
+
+
+            <!-- MACHINE ID -->
+
+            <div class="machine-id">
+
+                <strong>Machine ID:</strong>
+
+                {{ result.machine_id }}
+
+            </div>
+
+
+            <!-- PREDICTION -->
+
+            {% if result.prediction == 1 %}
+
+                <div class="danger">
+
+                    ⚠️ MACHINE FAILURE RISK
+
+                </div>
+
+            {% else %}
+
+                <div class="safe">
+
+                    ✅ NO MACHINE FAILURE DETECTED
+
+                </div>
+
+            {% endif %}
+
+
+            <!-- PROBABILITY -->
+
+            <div class="probability-section">
+
+                <h3>
+                    Failure Probability
+                </h3>
+
+                <div class="probability">
+
+                    {{ "%.2f"|format(result.probability * 100) }}%
+
+                </div>
+
+            </div>
+
+
+            <!-- SHAP EXPLANATION -->
+
+            <div class="explanation-section">
+
+                <h3>
+                    🔎 Why did the model make this prediction?
+                </h3>
+
+                <p class="description">
+
+                    SHAP values show how each feature contributed
+                    to the machine-failure prediction.
+
+                </p>
+
+
+                <div class="shap-list">
+
+                    {% for feature, value in result.shap %}
+
+                    <div class="shap-item">
+
+                        <span class="feature-name">
+                            {{ feature }}
+                        </span>
+
+
+                        {% if value > 0 %}
+
+                            <span class="positive">
+
+                                +{{ "%.3f"|format(value) }}
+
+                                ↑ Toward failure
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="negative">
+
+                                {{ "%.3f"|format(value) }}
+
+                                ↓ Away from failure
+
+                            </span>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+
+            <!-- RECOMMENDATION -->
+
+            <div class="recommendation-section">
+
+                <h3>
+                    🛠️ Maintenance Recommendation
+                </h3>
+
+
+                {% if result.recommendation is mapping %}
+
+                    <div class="risk-level">
+
+                        <strong>
+                            Risk Level:
+                        </strong>
+
+                        {{ result.recommendation.risk_level }}
+
+                    </div>
+
+
+                    {% if result.recommendation.risk_factors %}
+
+                        <div class="factors">
+
+                            <strong>
+                                Main Contributing Factors:
+                            </strong>
+
+                            <ul>
+
+                                {% for factor in result.recommendation.risk_factors %}
+
+                                    <li>
+                                        {{ factor }}
+                                    </li>
+
+                                {% endfor %}
+
+                            </ul>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="action">
+
+                        <strong>
+                            Recommended Action:
+                        </strong>
+
+                        <p>
+                            {{ result.recommendation.action }}
+                        </p>
+
+                    </div>
+
+                {% else %}
+
+                    <div class="action">
+
+                        <p>
+                            {{ result.recommendation }}
+                        </p>
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</body>
+
+</html>
